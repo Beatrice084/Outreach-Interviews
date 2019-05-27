@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.google.gson.JsonObject;
 import com.outreach.interviews.map.builder.MapRoutesHelper;
 import com.outreach.interviews.map.enums.MapOperations;
 import com.outreach.interviews.map.enums.MapRegions;
@@ -77,4 +78,53 @@ public class TestMapRoutesHelper
 		assertNotNull(steps);
 	}
 	
+	@Test
+	public void testMapRoutesHelperApiKey6() throws UnsupportedOperationException, IOException {
+		new MapRoutesHelper.RoutesBuilder()
+			.setStreetNumber(1600)
+			.setStreetName("Amphitheatre Parkway")
+			.setCity("Mountain View")
+			.setStateOrProvince("CA")
+			.setURL(MapOperations.geocode)
+			.build()
+			.getGeocode();
+	}
+	
+	@Test
+	public void testMapRoutesHelperApiKey7() throws UnsupportedOperationException, IOException {
+		new MapRoutesHelper.RoutesBuilder()
+			.setStreetNumber(329)
+			.setStreetName("Templeton")
+			.setCity("Ottawa")
+			.setStateOrProvince("ON")
+			.setURL(MapOperations.geocode)
+			.build()
+			.getGeocode();
+	}
+	
+	@Test
+	public void testMapRoutesHelperApiKey8() throws UnsupportedOperationException, IOException {
+		new MapRoutesHelper.RoutesBuilder()
+			.setStreetNumber(1600)
+			.setStreetName("Pennsylvania Avenue NW")
+			.setCity("Washington")
+			.setStateOrProvince("DC")
+			.setURL(MapOperations.geocode)
+			.build()
+			.getGeocode();
+	}
+	
+	@Test(expected = java.lang.IllegalArgumentException.class)
+	public void testMapRoutesHelperApiKey9() throws UnsupportedOperationException, IOException {
+		JsonObject geocode = new MapRoutesHelper.RoutesBuilder()
+				.setStreetNumber(1600)
+				.setStreetName("Pennsylvania Avenue NW")
+				.setCity("Washington")
+				.setStateOrProvince("DC")
+				.setURL(MapOperations.directions)
+				.build()
+				.getGeocode();
+		
+		assertNotNull(geocode);
+	}
 }

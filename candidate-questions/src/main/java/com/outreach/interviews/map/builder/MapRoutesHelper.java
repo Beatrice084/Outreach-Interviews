@@ -21,9 +21,13 @@ import com.outreach.interviews.map.enums.MapOperations;
 import com.outreach.interviews.map.enums.MapRegions;
 
 public class MapRoutesHelper
-{
+{	
 	public static class RoutesBuilder {
-
+		
+		private int streetNumber;
+		private String streetName;
+		private String city;
+		private String stateOrProvince;
 		private String origin;
 		private String destination;
 		private MapRegions region;
@@ -33,6 +37,47 @@ public class MapRoutesHelper
 
 		private final String URL = "https://maps.googleapis.com/maps/api/";
 		private CloseableHttpClient httpclient = HttpClients.createDefault();
+
+		
+		/**
+		 * Set the street number
+		 * @param integer representing the address street number
+		 * @return {@link RoutesBuilder}
+		 */
+		public RoutesBuilder setStreetNumber(int streetNumber)  {
+			this.streetNumber = streetNumber;
+			return this;
+		}
+		
+		/**
+		 * Set the street name
+		 * @param string representing the address street name
+		 * @return {@link RoutesBuilder}
+		 */
+		public RoutesBuilder setStreetName(String streetName)  {
+			this.streetName = streetName;
+			return this;
+		}
+		
+		/**
+		 * Set the city
+		 * @param string representing the address city
+		 * @return {@link RoutesBuilder}
+		 */
+		public RoutesBuilder setCity(String city)  {
+			this.city = city;
+			return this;
+		}
+		
+		/**
+		 * Set the stateOrProvince
+		 * @param string representing the address state or province
+		 * @return {@link RoutesBuilder}
+		 */
+		public RoutesBuilder setStateOrProvince(String stateOrProvince)  {
+			this.stateOrProvince = stateOrProvince;
+			return this;
+		}
 		
 		/**
 		 * Set the starting point
@@ -80,9 +125,6 @@ public class MapRoutesHelper
 		 * @return {@link RoutesBuilder}
 		 */
 		public RoutesBuilder setURL(MapOperations type) {
-			if(type.equals(MapOperations.geocode))
-				throw new UnsupportedOperationException();
-
 			this.operation = type;
 			return this;
 
@@ -93,18 +135,27 @@ public class MapRoutesHelper
 		 * @return {@link RoutesBuilder}  
 		 * @throws UnsupportedOperationException Thrown to indicate that the requested operation is not supported.
 		 * @throws IOException Thrown to indicate that the requested operation is not supported.
-		 * @throws IllegalArgumentException Thrown to indicate that a method has been passed an illegal orinappropriate argument.
+		 * @throws ArgumentException Thrown to indicate that a method has been passed an illegal orinappropriate argument.
 		 */
 		public RoutesBuilder build() throws UnsupportedOperationException, IOException, IllegalArgumentException {
-			String requestURL = this.getURL()  	+ "&origin=" + getOrigin() 
+			String requestURL;
+			if(this.operation.equals(MapOperations.geocode)) {
+				requestURL = this.getURL()  	+ "address=" + String.valueOf(this.getStreetNumber())
+												+ "+" + this.getStreetName().replaceAll(" ", "+")
+												+ "," + this.getCity().replaceAll(" ", "+")
+												+ "," + this.getStateOrProvince()
+												+ "&key=" + this.getAPIKey();
+			}
+			else {
+				requestURL = this.getURL()  	+ "&origin=" + getOrigin() 
 												+ "&destination=" + getDestination()
 												+ "&region=" + getRegion()
-												+ "&key=" + this.getAPIKey();
-			
-			if(getMode() != null) {
-				requestURL = requestURL + "&mode=" + this.getMode();
+												+ "&key=" + this.getAPIKey();		
+				if(getMode() != null) {
+					requestURL = requestURL + "&mode=" + this.getMode();
+				}
 			}
-			
+
 			HttpGet httpGet = new HttpGet(requestURL);
 			
 			CloseableHttpResponse response = httpclient.execute(httpGet);
@@ -117,7 +168,6 @@ public class MapRoutesHelper
 			finally {
 				response.close();
 			}
-			
 			return this;
 		}
 		
@@ -127,6 +177,7 @@ public class MapRoutesHelper
 		 */
 		public List<String> getDirections() {
 			if(this.operation.equals(MapOperations.directions) && zeroResults(this.result)) {
+//				System.out.print(this.result);
 				List<String> list = new ArrayList<String>();
 				JsonArray steps = this.result.get("routes").getAsJsonArray().get(0).getAsJsonObject()
 					.get("legs").getAsJsonArray().get(0).getAsJsonObject()
@@ -140,6 +191,22 @@ public class MapRoutesHelper
 				return list;
 			} else {
 				throw new IllegalArgumentException("Does not support " + MapOperations.geocode.name());
+			}
+		}
+		
+		/**
+		 * Retrieve the geocode (longitude and latitude) of an address
+		 * @return JsonObject containing longitude and latitude 
+		 */
+		public JsonObject getGeocode() {
+			if(this.operation.equals(MapOperations.geocode) && zeroResults(this.result)) {
+//				System.out.print(this.result.get("results").getAsJsonArray().get(0).getAsJsonObject()
+//						.get("geometry").getAsJsonObject().get("location").getAsJsonObject());
+				JsonObject geocode = this.result.get("results").getAsJsonArray().get(0).getAsJsonObject()
+						.get("geometry").getAsJsonObject().get("location").getAsJsonObject();
+				return geocode;
+			} else {
+				throw new IllegalArgumentException("Does not support " + MapOperations.directions.name());
 			}
 		}
 		
@@ -158,6 +225,22 @@ public class MapRoutesHelper
 				throw new IllegalArgumentException("Origin cannot be empty");
 			
 			return this.origin;
+		}
+		
+		private final int getStreetNumber() {
+			return this.streetNumber;
+		}
+		
+		private final String getStreetName() {
+			return this.streetName;
+		}
+		
+		private final String getCity() {
+			return this.city;
+		}
+		
+		private final String getStateOrProvince() {
+			return this.stateOrProvince;
 		}
 		
 		private final String getDestination() {
